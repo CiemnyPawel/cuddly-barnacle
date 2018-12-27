@@ -5,6 +5,9 @@
 #include <initializer_list>
 #include <stdexcept>
 #include <utility>
+#include <list>
+#include <array>
+#include <functional>
 
 namespace aisdi
 {
@@ -12,6 +15,10 @@ namespace aisdi
 template <typename KeyType, typename ValueType>
 class HashMap
 {
+private:
+std::array<std::list<std::pair<const KeyType,ValueType> >, 50> listArray;
+size_t mapSize = 0;
+static const size_t bucketsNumber = 50;
 public:
 using key_type = KeyType;
 using mapped_type = ValueType;
@@ -27,12 +34,17 @@ using const_iterator = ConstIterator;
 
 HashMap()
 {
+        mapSize = 0;
 }
 
 HashMap(std::initializer_list<value_type> list)
 {
         (void)list; // disables "unused argument" warning, can be removed when method is implemented.
         throw std::runtime_error("TODO");
+        mapSize = 0;
+        for(auto i = list.begin(); i < list.end(); i++)
+        {
+        }
 }
 
 HashMap(const HashMap& other)
@@ -64,10 +76,16 @@ bool isEmpty() const
         throw std::runtime_error("TODO");
 }
 
-mapped_type& operator[](const key_type& key)
+mapped_type& operator[](const key_type& key) // TODO
 {
         (void)key;
         throw std::runtime_error("TODO");
+        std::hash<key_type> itemHash;
+        size_t listNumber = itemHash(key)%bucketsNumber;
+        for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+        {
+
+        }
 }
 
 const mapped_type& valueOf(const key_type& key) const
