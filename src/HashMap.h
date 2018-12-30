@@ -148,7 +148,7 @@ iterator find(const key_type& key)
                 for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
                 {
                         if((*i).first == key)
-                                return ConstIterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
+                                return Iterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
                 }
         }
         return end();
@@ -156,8 +156,20 @@ iterator find(const key_type& key)
 
 void remove(const key_type& key)
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        /*std::hash<key_type> itemHash;
+           size_type listNumber = itemHash(key)%bucketsNumber;
+           if(listArray[listNumber].empty() == 0)
+           {
+                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                {
+                        if((*i).first == key)
+                                return (*i).second;
+                }
+           }
+           std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
+           temporary.first = key;
+           listArray[listNumber].push_back(temporary);
+           return temporary.second;*/
 }
 
 void remove(const const_iterator& it)
