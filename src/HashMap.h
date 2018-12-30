@@ -8,6 +8,9 @@
 #include <list>
 #include <array>
 #include <functional>
+#include <string>
+#include <vector>
+
 
 namespace aisdi
 {
@@ -17,7 +20,7 @@ class HashMap
 {
 private:
 static const size_t bucketsNumber = 50;
-std::array<std::list<std::pair<const KeyType,ValueType> >, bucketsNumber> listArray;
+std::vector<std::list<std::pair<const KeyType, ValueType> > > listVector;
 size_t mapSize = 0;
 public:
 using key_type = KeyType;
@@ -39,13 +42,12 @@ HashMap()
 
 HashMap(std::initializer_list<value_type> list)
 {
+        std::hash<KeyType> itemHash;
         mapSize = 0;
-        std::hash<key_type> itemHash;
-        size_type listNumber;
-        for(auto i = list.begin(); i < list.end(); i++)
+        for(auto i = list.begin(); i != list.end(); i++)
         {
-                listNumber = itemHash(i->first)%bucketsNumber;
-                listArray[listNumber].push_back(i->second);
+                listVector[itemHash(i->first)%bucketsNumber].push_back(*i);
+                mapSize++;
         }
 }
 
@@ -75,37 +77,40 @@ HashMap& operator=(HashMap&& other)
 
 bool isEmpty() const
 {
-        throw std::runtime_error("TODO");
+        for(auto it = listVector.begin(); it != listVector.end(); it++)
+        {
+                if((*it).empty() == 0)
+                        return false;
+        }
+        return true;
 }
 
 mapped_type& operator[](const key_type& key)
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
-                                return (*i).second;
+                        if((*it).first == key)
+                                return (*it).second;
                 }
         }
         std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
         temporary.first = key;
-        listArray[listNumber].push_back(temporary);
-        return temporary.second;
+        listVector[listNumber].push_back(temporary);
+        return (*listVector[listNumber].begin()).second;
 }
 
 const mapped_type& valueOf(const key_type& key) const
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
-                                return (*i).second;
+                        if((*it).first == key)
+                                return (*it).second;
                 }
         }
         throw std::out_of_range("Key doesn't exist - valueOf");
@@ -113,14 +118,13 @@ const mapped_type& valueOf(const key_type& key) const
 
 mapped_type& valueOf(const key_type& key)
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
-                                return (*i).second;
+                        if((*it).first == key)
+                                return (*it).second;
                 }
         }
         throw std::out_of_range("Key doesn't exist - valueOf");
@@ -128,14 +132,13 @@ mapped_type& valueOf(const key_type& key)
 
 const_iterator find(const key_type& key) const
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
-                                return ConstIterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
+                        if((*it).first == key)
+                                return ConstIterator{&listVector,&listVector[listNumber],std::distance(listVector[listNumber].begin(), it)};
                 }
         }
         return cend();
@@ -143,14 +146,13 @@ const_iterator find(const key_type& key) const
 
 iterator find(const key_type& key)
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
-                                return Iterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
+                        if((*it).first == key)
+                                return Iterator{&listVector,&listVector[listNumber],std::distance(listVector[listNumber].begin(), it)};
                 }
         }
         return end();
@@ -158,15 +160,16 @@ iterator find(const key_type& key)
 
 void remove(const key_type& key)
 {
-        std::hash<key_type> itemHash;
-        size_type listNumber = itemHash(key)%bucketsNumber;
-        if(listArray[listNumber].empty() == 0)
+        //std::hash<KeyType> itemHash;
+        size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        if(listVector[listNumber].empty() == 0)
         {
-                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*i).first == key)
+                        if((*it).first == key)
                         {
-                                listArray[listNumber].erase(i);
+                                listVector[listNumber].erase(it);
+                                mapSize--;
                                 return;
                         }
                 }
@@ -176,9 +179,12 @@ void remove(const key_type& key)
 
 void remove(const const_iterator& it)
 {
-        if((*it.ptrToList).empty() == 0)
+        if(it.ptrToList.empty() == 0)
         {
-                (*it.ptrToList).erase((*it.ptrToList).begin() + it.placeInList);
+                auto temporary = it.ptrToList.begin();
+                std::advance(temporary, it.placeInList);
+                it.ptrToList.erase(temporary);
+                mapSize--;
                 return;
         }
         throw std::out_of_range("Key doesn't exist - remove");
@@ -234,15 +240,15 @@ const_iterator end() const
 template <typename KeyType, typename ValueType>
 class HashMap<KeyType, ValueType>::ConstIterator
 {
-private:
-std::array<std::list<std::pair<const KeyType,ValueType> >, bucketsNumber>* ptrToHashMap;
-std::list<std::pair<const KeyType,ValueType> >* ptrToList;
-size_t placeInList;
 public:
 using reference = typename HashMap::const_reference;
 using iterator_category = std::bidirectional_iterator_tag;
 using value_type = typename HashMap::value_type;
 using pointer = const typename HashMap::value_type*;
+
+std::vector<std::list<std::pair<const KeyType, ValueType> > > &ptrToVector;
+std::list<std::pair<const KeyType,ValueType> > &ptrToList;
+size_t placeInList;
 
 explicit ConstIterator()
 {
@@ -351,5 +357,6 @@ reference operator*() const
 };
 
 }
+
 
 #endif /* AISDI_MAPS_HASHMAP_H */
