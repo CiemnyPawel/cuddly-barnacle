@@ -76,10 +76,10 @@ bool isEmpty() const
         throw std::runtime_error("TODO");
 }
 
-mapped_type& operator[](const key_type& key) // TODO
+mapped_type& operator[](const key_type& key)
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        /*(void)key;
+           throw std::runtime_error("TODO");*/
         std::hash<key_type> itemHash;
         size_type listNumber = itemHash(key)%bucketsNumber;
         if(listArray[listNumber].empty() == 0)
@@ -105,14 +105,32 @@ mapped_type& operator[](const key_type& key) // TODO
 
 const mapped_type& valueOf(const key_type& key) const
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        std::hash<key_type> itemHash;
+        size_type listNumber = itemHash(key)%bucketsNumber;
+        if(listArray[listNumber].empty() == 0)
+        {
+                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                {
+                        if((*i).first == key)
+                                return (*i).second;
+                }
+        }
+        throw std::out_of_range("Key doesn't exist");
 }
 
 mapped_type& valueOf(const key_type& key)
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        std::hash<key_type> itemHash;
+        size_type listNumber = itemHash(key)%bucketsNumber;
+        if(listArray[listNumber].empty() == 0)
+        {
+                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                {
+                        if((*i).first == key)
+                                return (*i).second;
+                }
+        }
+        throw std::out_of_range("Key doesn't exist");
 }
 
 const_iterator find(const key_type& key) const
