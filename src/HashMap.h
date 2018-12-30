@@ -78,8 +78,6 @@ bool isEmpty() const
 
 mapped_type& operator[](const key_type& key)
 {
-        /*(void)key;
-           throw std::runtime_error("TODO");*/
         std::hash<key_type> itemHash;
         size_type listNumber = itemHash(key)%bucketsNumber;
         if(listArray[listNumber].empty() == 0)
@@ -89,18 +87,11 @@ mapped_type& operator[](const key_type& key)
                         if((*i).first == key)
                                 return (*i).second;
                 }
-                std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
-                temporary.first = key;
-                listArray[listNumber].push_back(temporary);
-                return temporary.second;
         }
-        else
-        {
-                std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
-                temporary.first = key;
-                listArray[listNumber].push_back(temporary);
-                return temporary.second;
-        }
+        std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
+        temporary.first = key;
+        listArray[listNumber].push_back(temporary);
+        return temporary.second;
 }
 
 const mapped_type& valueOf(const key_type& key) const
