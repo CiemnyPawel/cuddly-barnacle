@@ -199,6 +199,10 @@ bool operator==(const HashMap& other) const
 {
         (void)other;
         throw std::runtime_error("TODO");
+        if(listVector == other.listVector)
+                return true;
+        else
+                return false;
 }
 
 bool operator!=(const HashMap& other) const
