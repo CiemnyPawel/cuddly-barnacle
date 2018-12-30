@@ -16,9 +16,9 @@ template <typename KeyType, typename ValueType>
 class HashMap
 {
 private:
-std::array<std::list<std::pair<const KeyType,ValueType> >, 50> listArray;
-size_t mapSize = 0;
 static const size_t bucketsNumber = 50;
+std::array<std::list<std::pair<const KeyType,ValueType> >, bucketsNumber> listArray;
+size_t mapSize = 0;
 public:
 using key_type = KeyType;
 using mapped_type = ValueType;
@@ -106,7 +106,7 @@ const mapped_type& valueOf(const key_type& key) const
                                 return (*i).second;
                 }
         }
-        throw std::out_of_range("Key doesn't exist");
+        throw std::out_of_range("Key doesn't exist - valueOf");
 }
 
 mapped_type& valueOf(const key_type& key)
@@ -121,7 +121,7 @@ mapped_type& valueOf(const key_type& key)
                                 return (*i).second;
                 }
         }
-        throw std::out_of_range("Key doesn't exist");
+        throw std::out_of_range("Key doesn't exist - valueOf");
 }
 
 const_iterator find(const key_type& key) const
@@ -156,31 +156,35 @@ iterator find(const key_type& key)
 
 void remove(const key_type& key)
 {
-        /*std::hash<key_type> itemHash;
-           size_type listNumber = itemHash(key)%bucketsNumber;
-           if(listArray[listNumber].empty() == 0)
-           {
+        std::hash<key_type> itemHash;
+        size_type listNumber = itemHash(key)%bucketsNumber;
+        if(listArray[listNumber].empty() == 0)
+        {
                 for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
                 {
                         if((*i).first == key)
-                                return (*i).second;
+                        {
+                                listArray[listNumber].erase(i);
+                                return;
+                        }
                 }
-           }
-           std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
-           temporary.first = key;
-           listArray[listNumber].push_back(temporary);
-           return temporary.second;*/
+        }
+        throw std::out_of_range("Key doesn't exist - remove");
 }
 
 void remove(const const_iterator& it)
 {
-        (void)it;
-        throw std::runtime_error("TODO");
+        if((*it.ptrToList).empty() == 0)
+        {
+                (*it.ptrToList).erase((*it.ptrToList).begin() + it.placeInList);
+                return;
+        }
+        throw std::out_of_range("Key doesn't exist - remove");
 }
 
 size_type getSize() const
 {
-        throw std::runtime_error("TODO");
+        return mapSize;
 }
 
 bool operator==(const HashMap& other) const
@@ -228,6 +232,10 @@ const_iterator end() const
 template <typename KeyType, typename ValueType>
 class HashMap<KeyType, ValueType>::ConstIterator
 {
+private:
+std::array<std::list<std::pair<const KeyType,ValueType> >, bucketsNumber>* ptrToHashMap;
+std::list<std::pair<const KeyType,ValueType> >* ptrToList;
+size_t placeInList;
 public:
 using reference = typename HashMap::const_reference;
 using iterator_category = std::bidirectional_iterator_tag;
