@@ -39,11 +39,13 @@ HashMap()
 
 HashMap(std::initializer_list<value_type> list)
 {
-        (void)list; // disables "unused argument" warning, can be removed when method is implemented.
-        throw std::runtime_error("TODO");
         mapSize = 0;
+        std::hash<key_type> itemHash;
+        size_type listNumber;
         for(auto i = list.begin(); i < list.end(); i++)
         {
+                listNumber = itemHash(i->first)%bucketsNumber;
+                listArray[listNumber].push_back(i->second);
         }
 }
 
