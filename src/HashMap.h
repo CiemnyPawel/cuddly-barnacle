@@ -135,14 +135,32 @@ mapped_type& valueOf(const key_type& key)
 
 const_iterator find(const key_type& key) const
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        std::hash<key_type> itemHash;
+        size_type listNumber = itemHash(key)%bucketsNumber;
+        if(listArray[listNumber].empty() == 0)
+        {
+                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                {
+                        if((*i).first == key)
+                                return ConstIterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
+                }
+        }
+        return cend();
 }
 
 iterator find(const key_type& key)
 {
-        (void)key;
-        throw std::runtime_error("TODO");
+        std::hash<key_type> itemHash;
+        size_type listNumber = itemHash(key)%bucketsNumber;
+        if(listArray[listNumber].empty() == 0)
+        {
+                for(auto i = listArray[listNumber].begin(); i < listArray[listNumber].end(); i++)
+                {
+                        if((*i).first == key)
+                                return ConstIterator{(*listArray),(*listArray[listNumber]),std::distance(listArray[listNumber].begin(), i)};
+                }
+        }
+        return end();
 }
 
 void remove(const key_type& key)
