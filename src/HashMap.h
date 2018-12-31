@@ -53,26 +53,32 @@ HashMap(std::initializer_list<value_type> list)
 
 HashMap(const HashMap& other)
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        listVector = other.listVector;
+        mapSize = other.mapSize;
 }
 
 HashMap(HashMap&& other)
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        listVector = std::move(other.listVector);
+        mapSize = std::move(other.mapSize);
 }
 
 HashMap& operator=(const HashMap& other)
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        if(this == &other)
+                return *this;
+        listVector = other.listVector;
+        mapSize = other.mapSize;
+        return *this;
 }
 
 HashMap& operator=(HashMap&& other)
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        if(this == &other)
+                return *this;
+        listVector = std::move(other.listVector);
+        mapSize = std::move(other.mapSize);
+        return *this;
 }
 
 bool isEmpty() const
@@ -160,7 +166,6 @@ iterator find(const key_type& key)
 
 void remove(const key_type& key)
 {
-        //std::hash<KeyType> itemHash;
         size_type listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
         if(listVector[listNumber].empty() == 0)
         {
@@ -222,13 +227,14 @@ iterator end()
 
 const_iterator cbegin() const
 {
-        throw std::runtime_error("TODO");
-
+        for(auto it = listVector.begin(); it != listVector.end(); it++)
+                if((*it).empty() == 0)
+                        return ConstIterator(this, &*it, it);
 }
 
 const_iterator cend() const
 {
-        throw std::runtime_error("TODO");
+        return ConstIterator(this, &listVector[bucketsNumber+1], listVector[bucketsNumber+1].begin());
 }
 
 const_iterator begin() const
