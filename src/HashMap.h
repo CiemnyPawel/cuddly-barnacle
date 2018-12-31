@@ -138,7 +138,7 @@ const_iterator find(const key_type& key) const
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return ConstIterator{&listVector,&listVector[listNumber],std::distance(listVector[listNumber].begin(), it)};
+                                return ConstIterator{this, &listVector[listNumber], it};
                 }
         }
         return cend();
@@ -152,7 +152,7 @@ iterator find(const key_type& key)
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return Iterator{&listVector,&listVector[listNumber],std::distance(listVector[listNumber].begin(), it)};
+                                return Iterator{this, &listVector[listNumber], it};
                 }
         }
         return end();
@@ -179,11 +179,9 @@ void remove(const key_type& key)
 
 void remove(const const_iterator& it)
 {
-        if(it.ptrToList.empty() == 0)
+        if(it.ptrToList.empty() == 0 and it.iteratorInList != it.ptrToList.end())
         {
-                auto temporary = it.ptrToList.begin();
-                std::advance(temporary, it.placeInList);
-                it.ptrToList.erase(temporary);
+                it.ptrToList.erase(it.iteratorInList);
                 mapSize--;
                 return;
         }
@@ -212,17 +210,20 @@ bool operator!=(const HashMap& other) const
 
 iterator begin()
 {
-        throw std::runtime_error("TODO");
+        for(auto it = listVector.begin(); it != listVector.end(); it++)
+                if((*it).empty() == 0)
+                        return Iterator(this, &*it, it);
 }
 
 iterator end()
 {
-        throw std::runtime_error("TODO");
+        return Iterator(this, &listVector[bucketsNumber+1], listVector[bucketsNumber+1].begin());
 }
 
 const_iterator cbegin() const
 {
         throw std::runtime_error("TODO");
+
 }
 
 const_iterator cend() const
@@ -250,9 +251,9 @@ using iterator_category = std::bidirectional_iterator_tag;
 using value_type = typename HashMap::value_type;
 using pointer = const typename HashMap::value_type*;
 
-std::vector<std::list<std::pair<const KeyType, ValueType> > > &ptrToVector;
+const HashMap &ptrToHashMap;
 std::list<std::pair<const KeyType,ValueType> > &ptrToList;
-size_t placeInList;
+typename std::list<std::pair<const KeyType,ValueType> >::iterator iteratorInList;
 
 explicit ConstIterator()
 {
