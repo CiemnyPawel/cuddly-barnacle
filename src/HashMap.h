@@ -186,7 +186,7 @@ void remove(const const_iterator& it)
 {
         if(it.ptrToHashMap.listVector[it.numberOfList].empty() == 0 and it.iteratorInList != it.ptrToHashMap.listVector[it.numberOfList].end())
         {
-                it.ptrToHashMap.listVector[it.numberOfList].erase(it.iteratorInList);
+                it.ptrToHashMap.listVector.at(it.numberOfList).erase(it.iteratorInList);
                 mapSize--;
                 return;
         }
@@ -264,13 +264,22 @@ typename std::list<std::pair<const KeyType,ValueType> >::iterator iteratorInList
 
 explicit ConstIterator()
 {
-
+        ptrToHashMap = nullptr;
+        numberOfList = 0;
 }
 
 ConstIterator(const ConstIterator &other)
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        ptrToHashMap = other.ptrToHashMap;
+        numberOfList = other.numberOfList;
+        iteratorInList = other.iteratorInList;
+}
+
+ConstIterator(HashMap &ptr, auto listNum, typename std::list<std::pair<const KeyType,ValueType> >::iterator it)
+{
+        ptrToHashMap = ptr;
+        numberOfList = (size_t)listNum;
+        iteratorInList = it;
 }
 
 ConstIterator& operator++()
