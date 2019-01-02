@@ -144,7 +144,7 @@ const_iterator find(const key_type& key) const
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return ConstIterator{this, &listVector[listNumber], it};
+                                return ConstIterator{this, listNumber, it};
                 }
         }
         return cend();
@@ -158,7 +158,7 @@ iterator find(const key_type& key)
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return Iterator{this, &listVector[listNumber], it};
+                                return Iterator{this, listNumber, it};
                 }
         }
         return end();
@@ -184,9 +184,9 @@ void remove(const key_type& key)
 
 void remove(const const_iterator& it)
 {
-        if(it.ptrToList.empty() == 0 and it.iteratorInList != it.ptrToList.end())
+        if(it.ptrToHashMap.listVector[it.numberOfList].empty() == 0 and it.iteratorInList != it.ptrToHashMap.listVector[it.numberOfList].end())
         {
-                it.ptrToList.erase(it.iteratorInList);
+                it.ptrToHashMap.listVector[it.numberOfList].erase(it.iteratorInList);
                 mapSize--;
                 return;
         }
@@ -217,24 +217,24 @@ iterator begin()
 {
         for(auto it = listVector.begin(); it != listVector.end(); it++)
                 if((*it).empty() == 0)
-                        return Iterator(this, &*it, it);
+                        return Iterator(this, std::distance(listVector.begin(), it), it);
 }
 
 iterator end()
 {
-        return Iterator(this, &listVector[bucketsNumber+1], listVector[bucketsNumber+1].begin());
+        return Iterator(this, bucketsNumber, listVector[bucketsNumber+1].begin());
 }
 
 const_iterator cbegin() const
 {
         for(auto it = listVector.begin(); it != listVector.end(); it++)
                 if((*it).empty() == 0)
-                        return ConstIterator(this, &*it, it);
+                        return ConstIterator(this, std::distance(listVector.begin(), it), it);
 }
 
 const_iterator cend() const
 {
-        return ConstIterator(this, &listVector[bucketsNumber+1], listVector[bucketsNumber+1].begin());
+        return ConstIterator(this, bucketsNumber, listVector[bucketsNumber+1].begin());
 }
 
 const_iterator begin() const
@@ -257,12 +257,14 @@ using iterator_category = std::bidirectional_iterator_tag;
 using value_type = typename HashMap::value_type;
 using pointer = const typename HashMap::value_type*;
 
-const HashMap &ptrToHashMap;
-std::list<std::pair<const KeyType,ValueType> > &ptrToList;
+HashMap &ptrToHashMap;
+//std::list<std::pair<const KeyType,ValueType> > *ptrToList;
+size_t numberOfList;
 typename std::list<std::pair<const KeyType,ValueType> >::iterator iteratorInList;
 
 explicit ConstIterator()
 {
+
 }
 
 ConstIterator(const ConstIterator &other)
