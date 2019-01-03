@@ -144,7 +144,7 @@ const_iterator find(const key_type& key) const
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return ConstIterator{this, listNumber, it};
+                                return ConstIterator(this, listNumber, it);
                 }
         }
         return cend();
@@ -158,7 +158,7 @@ iterator find(const key_type& key)
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
                         if((*it).first == key)
-                                return Iterator{this, listNumber, it};
+                                return Iterator(this, listNumber, it);
                 }
         }
         return end();
@@ -184,9 +184,9 @@ void remove(const key_type& key)
 
 void remove(const const_iterator& it)
 {
-        if(it.ptrToHashMap.listVector[it.numberOfList].empty() == 0 and it.iteratorInList != it.ptrToHashMap.listVector[it.numberOfList].end())
+        if(listVector[it.numberOfList].empty() == 0 and it.iteratorInList != listVector[it.numberOfList].end())
         {
-                it.ptrToHashMap.listVector.at(it.numberOfList).erase(it.iteratorInList);
+                listVector.at(it.numberOfList).erase(it.iteratorInList);
                 mapSize--;
                 return;
         }
@@ -200,8 +200,8 @@ size_type getSize() const
 
 bool operator==(const HashMap& other) const
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        if(mapSize != other.mapSize)
+                return false;
         if(listVector == other.listVector)
                 return true;
         else
@@ -217,24 +217,24 @@ iterator begin()
 {
         for(auto it = listVector.begin(); it != listVector.end(); it++)
                 if((*it).empty() == 0)
-                        return Iterator(this, std::distance(listVector.begin(), it), it);
+                        return Iterator(this, std::distance(listVector.begin(), it), (*it).begin());
 }
 
 iterator end()
 {
-        return Iterator(this, bucketsNumber, listVector[bucketsNumber+1].begin());
+        return Iterator(this, bucketsNumber, listVector[bucketsNumber].begin());
 }
 
 const_iterator cbegin() const
 {
         for(auto it = listVector.begin(); it != listVector.end(); it++)
-                if((*it).empty() == 0)
-                        return ConstIterator(this, std::distance(listVector.begin(), it), it);
+                if(it.empty() == 0)
+                        return ConstIterator(this, (size_t) std::distance(listVector.begin(), it), (*it).begin());
 }
 
 const_iterator cend() const
 {
-        return ConstIterator(this, bucketsNumber, listVector[bucketsNumber+1].begin());
+        return ConstIterator(this, bucketsNumber - 1, listVector[bucketsNumber - 1].end());
 }
 
 const_iterator begin() const
@@ -257,15 +257,16 @@ using iterator_category = std::bidirectional_iterator_tag;
 using value_type = typename HashMap::value_type;
 using pointer = const typename HashMap::value_type*;
 
-HashMap &ptrToHashMap;
+const HashMap *ptrToHashMap;
 //std::list<std::pair<const KeyType,ValueType> > *ptrToList;
 size_t numberOfList;
 typename std::list<std::pair<const KeyType,ValueType> >::iterator iteratorInList;
 
-explicit ConstIterator()
+explicit ConstIterator(const HashMap *ptr, auto listNum, typename std::list<std::pair<const KeyType,ValueType> >::iterator it)
 {
-        ptrToHashMap = nullptr;
-        numberOfList = 0;
+        ptrToHashMap = ptr;
+        numberOfList = (size_t)listNum;
+        iteratorInList = it;
 }
 
 ConstIterator(const ConstIterator &other)
@@ -273,13 +274,6 @@ ConstIterator(const ConstIterator &other)
         ptrToHashMap = other.ptrToHashMap;
         numberOfList = other.numberOfList;
         iteratorInList = other.iteratorInList;
-}
-
-ConstIterator(HashMap &ptr, auto listNum, typename std::list<std::pair<const KeyType,ValueType> >::iterator it)
-{
-        ptrToHashMap = ptr;
-        numberOfList = (size_t)listNum;
-        iteratorInList = it;
 }
 
 ConstIterator& operator++()
