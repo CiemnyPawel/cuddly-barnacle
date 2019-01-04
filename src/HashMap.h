@@ -20,7 +20,7 @@ class HashMap
 {
 private:
 static const size_t bucketsNumber = 50;
-std::vector<std::list<std::pair<const KeyType, ValueType> > > listVector;
+std::vector<std::list<std::pair<const KeyType, ValueType>* > > listVector;
 size_t mapSize = 0;
 public:
 using key_type = KeyType;
@@ -38,15 +38,18 @@ using const_iterator = ConstIterator;
 HashMap()
 {
         mapSize = 0;
+        listVector.resize(bucketsNumber);
 }
 
 HashMap(std::initializer_list<value_type> list)
 {
         std::hash<KeyType> itemHash;
         mapSize = 0;
+        listVector.resize(bucketsNumber);
         for(auto i = list.begin(); i != list.end(); i++)
         {
-                listVector[itemHash(i->first)%bucketsNumber].push_back(*i);
+                value_type* temporary = new value_type(i->first, i->second);
+                listVector[itemHash(i->first)%bucketsNumber].push_back(temporary);
                 mapSize++;
         }
 }
@@ -98,14 +101,14 @@ mapped_type& operator[](const key_type& key)
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
-                                return (*it).second;
+                        if((*(*it)).first == key)
+                                return (*(*it)).second;
                 }
         }
-        std::pair<key_type, mapped_type> temporary{key, mapped_type{}};
-        temporary.first = key;
+        value_type* temporary = new value_type{key, mapped_type{}};
         listVector[listNumber].push_back(temporary);
-        return (*listVector[listNumber].begin()).second;
+        mapSize++;
+        return (*(*listVector[listNumber].begin())).second;
 }
 
 const mapped_type& valueOf(const key_type& key) const
@@ -115,8 +118,8 @@ const mapped_type& valueOf(const key_type& key) const
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
-                                return (*it).second;
+                        if((*(*it)).first == key)
+                                return (*(*it)).second;
                 }
         }
         throw std::out_of_range("Key doesn't exist - valueOf");
@@ -129,8 +132,8 @@ mapped_type& valueOf(const key_type& key)
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
-                                return (*it).second;
+                        if((*(*it)).first == key)
+                                return (*(*it)).second;
                 }
         }
         throw std::out_of_range("Key doesn't exist - valueOf");
@@ -143,7 +146,7 @@ const_iterator find(const key_type& key) const
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
+                        if((*(*it)).first == key)
                                 return ConstIterator(this, listNumber, it);
                 }
         }
@@ -157,8 +160,8 @@ iterator find(const key_type& key)
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
-                                return Iterator(this, listNumber, it);
+                        if((*(*it)).first == key)
+                                return Iterator(ConstIterator(this, listNumber, it));
                 }
         }
         return end();
@@ -171,7 +174,7 @@ void remove(const key_type& key)
         {
                 for(auto it = listVector[listNumber].begin(); it != listVector[listNumber].end(); it++)
                 {
-                        if((*it).first == key)
+                        if((*(*it)).first == key)
                         {
                                 listVector[listNumber].erase(it);
                                 mapSize--;
@@ -184,9 +187,9 @@ void remove(const key_type& key)
 
 void remove(const const_iterator& it)
 {
-        if(listVector[it.numberOfList].empty() == 0 and it.iteratorInList != listVector[it.numberOfList].end())
+        if(listVector[it.numberOfList].empty() == 0 and it.iteratorInCurrentList != listVector[it.numberOfList].end())
         {
-                listVector.at(it.numberOfList).erase(it.iteratorInList);
+                listVector.at(it.numberOfList).erase(it.iteratorInCurrentList);
                 mapSize--;
                 return;
         }
@@ -202,10 +205,20 @@ bool operator==(const HashMap& other) const
 {
         if(mapSize != other.mapSize)
                 return false;
-        if(listVector == other.listVector)
+        for(auto it = other.begin(); it != other.end(); it++)
+        {
+                auto temporary = find(it->first);
+                if(temporary == end())
+                        return 0;
+                if(valueOf(it->first) != other.valueOf(it->first))
+                        return 0;
+        }
+        return 1;
+        /*
+            if(listVector == other.listVector)
                 return true;
-        else
-                return false;
+            else
+                return false;*/
 }
 
 bool operator!=(const HashMap& other) const
@@ -215,21 +228,25 @@ bool operator!=(const HashMap& other) const
 
 iterator begin()
 {
+        if(mapSize == 0)
+                return cend();
         for(auto it = listVector.begin(); it != listVector.end(); it++)
                 if((*it).empty() == 0)
-                        return Iterator(this, std::distance(listVector.begin(), it), (*it).begin());
+                        return Iterator(ConstIterator(this, std::distance(listVector.begin(), it), (*it).begin()));
 }
 
 iterator end()
 {
-        return Iterator(this, bucketsNumber, listVector[bucketsNumber].begin());
+        return Iterator(ConstIterator(this, bucketsNumber - 1, listVector[bucketsNumber - 1].end()));
 }
 
 const_iterator cbegin() const
 {
+        if(mapSize == 0)
+                return cend();
         for(auto it = listVector.begin(); it != listVector.end(); it++)
-                if(it.empty() == 0)
-                        return ConstIterator(this, (size_t) std::distance(listVector.begin(), it), (*it).begin());
+                if((*it).empty() == 0)
+                        return ConstIterator(this, std::distance(listVector.begin(), it), (*it).begin());
 }
 
 const_iterator cend() const
@@ -256,49 +273,77 @@ using reference = typename HashMap::const_reference;
 using iterator_category = std::bidirectional_iterator_tag;
 using value_type = typename HashMap::value_type;
 using pointer = const typename HashMap::value_type*;
+using listIterator = typename std::list<std::pair<const KeyType,ValueType>* >::const_iterator;
 
 const HashMap *ptrToHashMap;
-//std::list<std::pair<const KeyType,ValueType> > *ptrToList;
 size_t numberOfList;
-typename std::list<std::pair<const KeyType,ValueType> >::iterator iteratorInList;
+listIterator iteratorInCurrentList;
 
-explicit ConstIterator(const HashMap *ptr, auto listNum, typename std::list<std::pair<const KeyType,ValueType> >::iterator it)
+explicit ConstIterator(const HashMap *ptr, size_t listNum, listIterator it)
 {
         ptrToHashMap = ptr;
         numberOfList = (size_t)listNum;
-        iteratorInList = it;
+        iteratorInCurrentList = it;
 }
 
 ConstIterator(const ConstIterator &other)
 {
         ptrToHashMap = other.ptrToHashMap;
         numberOfList = other.numberOfList;
-        iteratorInList = other.iteratorInList;
+        iteratorInCurrentList = other.iteratorInCurrentList;
 }
 
 ConstIterator& operator++()
 {
-        throw std::runtime_error("TODO");
+        if(*this == ptrToHashMap->end())
+                throw std::out_of_range("Incrementing map's end.");
+        iteratorInCurrentList++;
+        while(iteratorInCurrentList == ptrToHashMap->listVector[numberOfList].end())
+        {
+                numberOfList++;
+                if(numberOfList == ptrToHashMap->bucketsNumber)
+                {
+                        *this = ptrToHashMap->end();
+                        return *this;
+                }
+                iteratorInCurrentList = ptrToHashMap->listVector[numberOfList].begin();
+        }
+        return *this;
 }
 
 ConstIterator operator++(int)
 {
-        throw std::runtime_error("TODO");
+        auto ToReturn = *this;
+        ++(*this);
+        return ToReturn;
 }
 
 ConstIterator& operator--()
 {
-        throw std::runtime_error("TODO");
+        if(*this == ptrToHashMap->begin())
+                throw std::out_of_range("Decrementing map's start.");
+
+        while(ptrToHashMap->listVector[numberOfList].begin() == ptrToHashMap->listVector[numberOfList].end())
+        {
+                numberOfList--;
+                iteratorInCurrentList = ptrToHashMap->listVector[numberOfList].end();
+        }
+        iteratorInCurrentList--;
+        return *this;
 }
 
 ConstIterator operator--(int)
 {
-        throw std::runtime_error("TODO");
+        auto ToReturn = *this;
+        --(*this);
+        return ToReturn;
 }
 
 reference operator*() const
 {
-        throw std::runtime_error("TODO");
+        if(*this == ptrToHashMap->end())
+                throw std::out_of_range("Dereferencing map's end.");
+        return **iteratorInCurrentList;
 }
 
 pointer operator->() const
@@ -308,8 +353,7 @@ pointer operator->() const
 
 bool operator==(const ConstIterator& other) const
 {
-        (void)other;
-        throw std::runtime_error("TODO");
+        return iteratorInCurrentList == other.iteratorInCurrentList;
 }
 
 bool operator!=(const ConstIterator& other) const
