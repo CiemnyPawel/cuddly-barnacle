@@ -19,7 +19,7 @@ template <typename KeyType, typename ValueType>
 class HashMap
 {
 private:
-static const size_t bucketsNumber = 50;
+size_t bucketsNumber = 50;
 std::vector<std::list<std::pair<const KeyType, ValueType>* > > listVector;
 size_t mapSize = 0;
 public:
@@ -41,6 +41,17 @@ HashMap()
         listVector.resize(bucketsNumber);
 }
 
+~HashMap()
+{
+        listVector.clear();
+}
+
+HashMap(size_t bucketsNR)
+{
+        bucketsNumber = bucketsNR;
+        listVector.resize(bucketsNumber);
+}
+
 HashMap(std::initializer_list<value_type> list)
 {
         std::hash<KeyType> itemHash;
@@ -58,18 +69,21 @@ HashMap(const HashMap& other)
 {
         listVector = other.listVector;
         mapSize = other.mapSize;
+        bucketsNumber = other.bucketsNumber;
 }
 
 HashMap(HashMap&& other)
 {
         listVector = std::move(other.listVector);
         mapSize = std::move(other.mapSize);
+        bucketsNumber = std::move(other.bucketsNumber);
 }
 
 HashMap& operator=(const HashMap& other)
 {
         if(this == &other)
                 return *this;
+        bucketsNumber = other.bucketsNumber;
         listVector = other.listVector;
         mapSize = other.mapSize;
         return *this;
@@ -81,6 +95,7 @@ HashMap& operator=(HashMap&& other)
                 return *this;
         listVector = std::move(other.listVector);
         mapSize = std::move(other.mapSize);
+        bucketsNumber = std::move(other.bucketsNumber);
         return *this;
 }
 
@@ -105,6 +120,12 @@ mapped_type& operator[](const key_type& key)
                                 return (*(*it)).second;
                 }
         }
+        if (isTooSmall())
+        {
+                makeBigger();
+                listNumber = (size_t)(std::hash<KeyType >{} (key) % bucketsNumber);
+        }
+
         value_type* temporary = new value_type{key, mapped_type{}};
         listVector[listNumber].push_back(temporary);
         mapSize++;
@@ -263,6 +284,29 @@ const_iterator end() const
 {
         return cend();
 }
+
+private:
+bool isTooSmall()
+{
+        float loadFactor = (mapSize) / (bucketsNumber*100);
+        if (loadFactor > 0.75)
+                return 1;
+        return 0;
+}
+
+void makeBigger()
+{
+        HashMap<key_type, mapped_type> bigger(bucketsNumber * 2);
+        for (auto it = listVector.begin(); it != listVector.end(); it++)
+        {
+                for(auto i = (*it).begin(); i != (*it).end(); i++)
+                        bigger[(**i).first] = (**i).second;
+        }
+        *this = std::move(bigger);
+
+        return;
+}
+
 };
 
 template <typename KeyType, typename ValueType>
